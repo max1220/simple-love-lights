@@ -1,16 +1,63 @@
 # SIMPLE LOVE LIGHTS
-This is a very simple implementation of [mattdesl's *Pixel Perfect 2D Shadows*](https://github.com/mattdesl/lwjgl-basics/wiki/2D-Pixel-Perfect-Shadows) in Love2d/Lua. The code is simple and easy to understand. It is useful for applications that need bare-bone 2D raycasted lights and shadows. (No advanced features, such as normal maps, are provided.)
 
-This was built and tested with Love 0.10.2. 
+This library is a slight modification to a trivial implementation of raycasting point lights for love2d/LÖVE, in module form.
+It is basically just packaging dylhunn's simple-love-lights in a module. Original:
+  https://github.com/dylhunn/simple-love-lights
+ Which is heavily based on mattdesl's libGDX implementation, described here:
+  https://github.com/mattdesl/lwjgl-basics/wiki/2D-Pixel-Perfect-Shadows
+
+You should realy read the source code, as there is not much documentation,
+and the source code is *realy* small.
+
+This library is tested on version `0.11.1`.
+This should work in Love versions >= `0.10`.
+
+
+# Performance considerations
+
+This library creates shadows by creating a shadow map for each light, then
+blending them together in a very clever way. But this has some disadvantages:
+There is a huge cost per-light:
+You need a new shadow map(seperate canvas), plus alpha-blending for each light.
+The cost is also related to the size of the light, since the shadow maps dimensions are depentant on it.
+But the cost per occluder is basically just drawing it's shape in the light world per light(Which is low).
+This makes this library ideal for if you don't want to manually keep track of the occluders.
+
 
 # API
 
+You must create a light world, which holds all the needed functions for 
+From your `love.draw()` function, you **must** call the provided function `world:drawLights(drawOccludersFn, coordTransX, coordTransY)`.
+`drawOccludersFn` is a callback that draws all shadow-casting objects in the scene. The Objects are only drawn to the shadow map.
+
+
 ```
-addLight(x, y, size, r, g, b)
-clearLights()
+world = Lights.newLightWorld() --> world
+world:addLight(x,y,size,r,g,b) --> light
+world:removeLight(light)
+world:clearLights()
+world:drawLights(drawOccludersFn, coordTransX, coordTransY)
 ```
 
-From your `love.draw()` function, you **must** call the provided function `drawLights(drawOccludersFn, coordTransX, coordTransY)`. `drawOccludersFn` is a callback that draws all shadow-casting objects in the scene. (I recommend you store this in a variable, and then call it a second time from `love.draw()` to actually draw the objects.)
+Internal API:
+```
+world:drawLight(drawOccludersFn, lightInfo, coordTransX, coordTransY)
+world.LightInfos
+world.shadowMapShader
+world.lightRenderShade
+```
+
+
+# TODO
+
+ * Global scale
+ * Combine multiple lights into 1 canvas
+ * Seperate light map update/draw
+ * Add screenshot of new example
+ * Fix inaccurate borders
 
 # Examples
-![Simple Love Lights example image](example.png)
+
+This comes with a runnable example. Just run `love .` in this directory.
+You can place a square with right-click, and place a light with left-click.
+Reset the scene with middle-click. (See `main.lua`)
