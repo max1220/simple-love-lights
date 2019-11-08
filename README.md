@@ -1,16 +1,22 @@
 # SIMPLE LOVE LIGHTS
 
 This library is a slight modification to a trivial implementation of raycasting point lights for love2d/LÖVE, in module form.
-It is basically just packaging dylhunn's simple-love-lights in a module. Original:
-  https://github.com/dylhunn/simple-love-lights
- Which is heavily based on mattdesl's libGDX implementation, described here:
-  https://github.com/mattdesl/lwjgl-basics/wiki/2D-Pixel-Perfect-Shadows
+
+
+It is basically just packaging dylhunn's simple-love-lights in a module: https://github.com/dylhunn/simple-love-lights
+
+
+Which is heavily based on mattdesl's libGDX implementation, described here: https://github.com/mattdesl/lwjgl-basics/wiki/2D-Pixel-Perfect-Shadows
+
 
 You should realy read the source code, as there is not much documentation,
 and the source code is *realy* small.
 
-This library is tested on version `0.11.1`.
-This should work in Love versions >= `0.10`.
+
+# LÖVE Version
+
+This library is tested in LÖVE version `0.11.1`.
+This should work in LÖVE versions `>= 0.10`.
 
 
 # Performance considerations
@@ -26,9 +32,9 @@ This makes this library ideal for if you don't want to manually keep track of th
 
 # API
 
-You must create a light world, which holds all the needed functions for 
-From your `love.draw()` function, you **must** call the provided function `world:drawLights(drawOccludersFn, coordTransX, coordTransY)`.
-`drawOccludersFn` is a callback that draws all shadow-casting objects in the scene. The Objects are only drawn to the shadow map.
+You must first create a light world, which holds all the needed functions for operation. Then,
+From your `love.draw()` function, you must call the function `world:drawLights(drawOccludersFn, coordTransX, coordTransY)`.
+Where `drawOccludersFn` is a callback that draws all shadow-casting objects in the scene. The Objects are only drawn to the shadow map.
 
 
 ```
