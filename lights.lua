@@ -51,7 +51,6 @@ function Lights.newLightWorld()
 				if (caster > ALPHA_THRESHOLD) {
 					distance = min(distance, dst);
 					break;
-					// NOTE: we could probably use "break" or "return" here
 				}
 
 			}
@@ -101,17 +100,11 @@ function Lights.newLightWorld()
 			// Sum of 1.0 -> in light, 0.0 -> in shadow.
 		 	// Multiply the summed amount by our distance, which gives us a radial falloff.
 		 	return vec4(vec3(1.0), sum * smoothstep(1.0, 0.0, r));
+			//return vec4(vec3(1.0), center*smoothstep(1.0, 0.0, r));
 		}
 	]])
 
 	function LightWorld:addLight(lx,ly,lsize,lr,lg,lb)
-		-- Don't allow multiple lights at the same point.
-		for _, lightInfo in ipairs(self.LightInfos) do
-			if lightInfo.x == lx and lightInfo.y == ly then
-				return
-			end
-		end
-
 		local lightInfo = {
 			x=lx,
 			y=ly,
@@ -139,30 +132,39 @@ function Lights.newLightWorld()
 		self.LightInfos = {}
 	end
 
-	function LightWorld:drawLights(drawOccludersFn, coordTransX, coordTransY)
+	function LightWorld:drawLights(coordTransX, coordTransY)
 		for _, lightInfo in ipairs(self.LightInfos) do
-			self:drawLight(drawOccludersFn, lightInfo, coordTransX, coordTransY)
+			self:drawLight(lightInfo, coordTransX, coordTransY)
 		end
 	end
 
-	function LightWorld:drawLight(drawOccludersFn, lightInfo, coordTransX, coordTransY)
-		lightInfo.occludersCanvas:renderTo(function() love.graphics.clear() end)
-		lightInfo.shadowMapCanvas:renderTo(function() love.graphics.clear() end)
-		lightInfo.lightRenderCanvas:renderTo(function() love.graphics.clear() end)
+	function LightWorld:updateLights(drawOccludersFn, coordTransX, coordTransY)
+		for _, lightInfo in ipairs(self.LightInfos) do
+			self:updateLight(drawOccludersFn, lightInfo, coordTransX, coordTransY)
+		end
+	end
+
+	function LightWorld:updateLight(drawOccludersFn, lightInfo, coordTransX, coordTransY)
+		lightInfo.occludersCanvas:renderTo(love.graphics.clear)
+		lightInfo.shadowMapCanvas:renderTo(love.graphics.clear)
+		lightInfo.lightRenderCanvas:renderTo(love.graphics.clear)
 
 		self.lightRenderShader:send("xresolution", lightInfo.size);
 		self.shadowMapShader:send("yresolution", lightInfo.size);
 
 		-- Upper-left corner of light-casting box.
-		x = lightInfo.x - (lightInfo.size / 2) + coordTransX
-		y = lightInfo.y - (lightInfo.size / 2) + coordTransY
+		local x = lightInfo.x - (lightInfo.size / 2) + coordTransX
+		local y = lightInfo.y - (lightInfo.size / 2) + coordTransY
 
 		-- Translating the occluders by the position of the light-casting
 		-- box causes only occluders in the box to appear on the canvas.
 		love.graphics.push()
 		love.graphics.translate(-x, -y)
+
 		lightInfo.occludersCanvas:renderTo(drawOccludersFn)
+
 		love.graphics.pop()
+
 
 		-- We need to un-apply any scrolling coordinate translation, because
 		-- we want to draw the light/shadow effect canvas (and helpers) literally at
@@ -171,21 +173,34 @@ function Lights.newLightWorld()
 		love.graphics.push()
 		love.graphics.translate(-coordTransX, -coordTransY)
 
+		-- draw to shadowMapCanvas from occluderCanvas
 		love.graphics.setShader(self.shadowMapShader)
 		love.graphics.setCanvas(lightInfo.shadowMapCanvas)
 		love.graphics.draw(lightInfo.occludersCanvas, 0, 0)
 		love.graphics.setCanvas()
 		love.graphics.setShader()
 
+		-- draw to lightRenderCanvas from shadowMapCanvas
 		love.graphics.setShader(self.lightRenderShader)
 		love.graphics.setCanvas(lightInfo.lightRenderCanvas)
 		love.graphics.draw(lightInfo.shadowMapCanvas, 0, 0, 0, 1, lightInfo.size)
 		love.graphics.setCanvas()
 		love.graphics.setShader()
 
+		love.graphics.pop()
+	end
 
+	function LightWorld:drawLight(lightInfo, coordTransX, coordTransY)
+		-- Upper-left corner of light-casting box.
+		local x = lightInfo.x - (lightInfo.size / 2) + coordTransX
+		local y = lightInfo.y - (lightInfo.size / 2) + coordTransY
+
+		love.graphics.push()
+		love.graphics.translate(-coordTransX, -coordTransY)
+
+		-- draw the pre-calculated lightRenderCanvas to the screen
 		love.graphics.setBlendMode("add")
-		love.graphics.setColor(lightInfo.r, lightInfo.g, lightInfo.b, 255)
+		love.graphics.setColor(lightInfo.r, lightInfo.g, lightInfo.b, 1)
 		love.graphics.draw(lightInfo.lightRenderCanvas, x, y + lightInfo.size, 0, 1, -1)
 		love.graphics.setBlendMode("alpha")
 
