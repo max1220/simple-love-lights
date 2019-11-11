@@ -121,7 +121,6 @@ function love.keypressed(key)
 	end
 end
 function love.update(dt)
-	_dt = dt
 	collectgarbage()
 
 	-- update cursor light
