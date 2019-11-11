@@ -167,5 +167,5 @@ function love.draw()
 	love.graphics.rectangle("fill", 0,0, w, h)
 	love.graphics.setColor(1,1,1,1)
 	love.graphics.print(("FPS: %.1f   dt: %.5f   Lights: %d   GC: %d"):format(love.timer.getFPS(), love.timer.getDelta(), #lights, collectgarbage("count")), 10, 10)
-	love.graphics.printf("R: Randomize   LMB: Add light   RM: Add Occluder   MMB:  Clear", 0, 10, w-10, "right")
+	love.graphics.printf("R: Randomize   LMB: Add light   RMB: Add Occluder   MMB:  Clear", 0, 10, w-10, "right")
 end
