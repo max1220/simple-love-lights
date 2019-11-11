@@ -145,6 +145,11 @@ function Lights.newLightWorld()
 	end
 
 	function LightWorld:updateLight(drawOccludersFn, lightInfo, coordTransX, coordTransY)
+		-- regenerate canvas on resize
+		lightInfo.occludersCanvas = (lightInfo.occludersCanvas:getWidth()==lightInfo.size) and lightInfo.occludersCanvas or love.graphics.newCanvas(lightInfo.size, lightInfo.size)
+		lightInfo.shadowMapCanvas = (lightInfo.shadowMapCanvas:getWidth()==lightInfo.size) and lightInfo.shadowMapCanvas or love.graphics.newCanvas(lightInfo.size, 1)
+		lightInfo.lightRenderCanvas = (lightInfo.lightRenderCanvas:getWidth()==lightInfo.size) and lightInfo.lightRenderCanvas  or love.graphics.newCanvas(lightInfo.size, lightInfo.size)
+
 		lightInfo.occludersCanvas:renderTo(love.graphics.clear)
 		lightInfo.shadowMapCanvas:renderTo(love.graphics.clear)
 		lightInfo.lightRenderCanvas:renderTo(love.graphics.clear)
