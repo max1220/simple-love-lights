@@ -62,7 +62,7 @@ function Lights.newLightWorld()
 		extern number xresolution;
 
 		//sample from the 1D distance map
-		number sample(vec2 coord, number r, Image u_texture) {
+		number dist_sample(vec2 coord, number r, Image u_texture) {
 			return step(r, Texel(u_texture, coord).r);
 		}
 
@@ -78,7 +78,7 @@ function Lights.newLightWorld()
 			vec2 tc = vec2(coord, 0.0);
 
 			// The center tex coord, which gives us hard shadows.
-			number center = sample(tc, r, texture);
+			number center = dist_sample(tc, r, texture);
 
 			// Multiply the blur amount by our distance from center.
 			//this leads to more blurriness as the shadow "fades away"
@@ -86,16 +86,16 @@ function Lights.newLightWorld()
 
 			// Use a simple gaussian blur.
 			number sum = 0.0;
-			sum += sample(vec2(tc.x - 4.0*blur, tc.y), r, texture) * 0.05;
-			sum += sample(vec2(tc.x - 3.0*blur, tc.y), r, texture) * 0.09;
-			sum += sample(vec2(tc.x - 2.0*blur, tc.y), r, texture) * 0.12;
-			sum += sample(vec2(tc.x - 1.0*blur, tc.y), r, texture) * 0.15;
+			sum += dist_sample(vec2(tc.x - 4.0*blur, tc.y), r, texture) * 0.05;
+			sum += dist_sample(vec2(tc.x - 3.0*blur, tc.y), r, texture) * 0.09;
+			sum += dist_sample(vec2(tc.x - 2.0*blur, tc.y), r, texture) * 0.12;
+			sum += dist_sample(vec2(tc.x - 1.0*blur, tc.y), r, texture) * 0.15;
 
 			sum += center * 0.16;
-			sum += sample(vec2(tc.x + 1.0*blur, tc.y), r, texture) * 0.15;
-			sum += sample(vec2(tc.x + 2.0*blur, tc.y), r, texture) * 0.12;
-			sum += sample(vec2(tc.x + 3.0*blur, tc.y), r, texture) * 0.09;
-			sum += sample(vec2(tc.x + 4.0*blur, tc.y), r, texture) * 0.05;
+			sum += dist_sample(vec2(tc.x + 1.0*blur, tc.y), r, texture) * 0.15;
+			sum += dist_sample(vec2(tc.x + 2.0*blur, tc.y), r, texture) * 0.12;
+			sum += dist_sample(vec2(tc.x + 3.0*blur, tc.y), r, texture) * 0.09;
+			sum += dist_sample(vec2(tc.x + 4.0*blur, tc.y), r, texture) * 0.05;
 
 			// Sum of 1.0 -> in light, 0.0 -> in shadow.
 		 	// Multiply the summed amount by our distance, which gives us a radial falloff.
