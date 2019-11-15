@@ -1,12 +1,14 @@
 local Lights = require("lights") -- no globals required
 
 -- all the state for this example:
+local w,h = (tonumber(arg[2]) or 800), (tonumber(arg[3]) or 600) -- screen resolution
+local light_scale = tonumber(arg[4]) or 1 -- light scale
 local light_world -- will keep a reference for adding lights etc.
 local lights -- list of lights(so we can update the position of the cursor)
 local occluders -- list of "occluders"(squares that will block light)
-local w,h = (tonumber(arg[2]) or 800), (tonumber(arg[3]) or 600) -- resolution
 local font
 local obey -- draw the obey at the top of the screen if set(also reserve space while generating)
+local light_hue = 0
 
 
 
@@ -31,16 +33,16 @@ local function hsl_to_rgb(h, s, l)
 	end
 	return r, g, b
 end
-local function add_light(x,y,color)
+local function add_light(x,y,hue)
 	-- if color is set, generate random color. set white otherwise
 	local r,g,b = 1,1,1
-	if color then
-		r,g,b = hsl_to_rgb(math.random(), 1, 0.5)
+	if hue then
+		r,g,b = hsl_to_rgb(hue, 1, 0.5)
 	end
 
 	-- add light to light world
 	local size = 300
-	local light = light_world:addLight(x,y, size, r,g,b)
+	local light = light_world:addLight(x,y, size, r,g,b, light_scale)
 
 	-- keep reference to this light(To update/remove)
 	table.insert(lights, light)
@@ -61,7 +63,7 @@ local function draw_occluders()
 	-- draw all occluders (for the light calculation, not visible)
 	love.graphics.setColor(1,1,1,1)
 	for _, occ in ipairs(occluders) do
-		love.graphics.rectangle("fill", occ.x, occ.y, occ.w, occ.h)
+		love.graphics.rectangle("fill", occ.x+1, occ.y+1, occ.w-2, occ.h-2)
 	end
 	if obey then
 		love.graphics.push()
@@ -105,7 +107,11 @@ end
 function love.mousepressed(x,y,btn)
 	if btn == 1 then
 		-- add light at cursor on left mouse button
-		add_light(x,y, true)
+		if love.keyboard.isDown("lshift") then
+			add_light(x,y) -- white light if shift is down
+		else
+			add_light(x,y, light_hue)
+		end
 	elseif btn == 2 then
 		-- add square centered at cursor on right mouse button
 		add_occluder(x,y)
@@ -127,6 +133,7 @@ function love.update(dt)
 	if lights[1] then
 		lights[1].x = love.mouse.getX()
 		lights[1].y = love.mouse.getY()
+		lights[1].r,lights[1].g,lights[1].b = hsl_to_rgb(light_hue, 1, 0.5)
 	end
 
 	if obey then
@@ -162,10 +169,14 @@ function love.draw()
 	end
 
 	-- draw statistics
-	local h = font:getHeight() + 20
+	local menu_h = font:getHeight() + 20
 	love.graphics.setColor(0,0,0,0.2)
-	love.graphics.rectangle("fill", 0,0, w, h)
+	love.graphics.rectangle("fill", 0,0, w, menu_h)
+	love.graphics.rectangle("fill", 0,h-menu_h, w, menu_h)
 	love.graphics.setColor(1,1,1,1)
 	love.graphics.print(("FPS: %.1f   dt: %.5f   Lights: %d   GC: %d"):format(love.timer.getFPS(), love.timer.getDelta(), #lights, collectgarbage("count")), 10, 10)
-	love.graphics.printf("R: Randomize   LMB: Add light   RMB: Add Occluder   MMB:  Clear", 0, 10, w-10, "right")
+	love.graphics.print("R: Randomize   LMB: Add light   RMB: Add Occluder   MMB:  Clear", 10, h-menu_h+10)
+end
+function love.wheelmoved(x,y)
+	light_hue = (light_hue + y*0.01) % 1
 end
