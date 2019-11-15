@@ -82,7 +82,7 @@ function Lights.newLightWorld()
 
 			// Multiply the blur amount by our distance from center.
 			//this leads to more blurriness as the shadow "fades away"
-			number blur = (1./xresolution)  * smoothstep(0., 1., r);
+			number blur = (1./xresolution) * smoothstep(0., 1., r);
 
 			// Use a simple gaussian blur.
 			number sum = 0.0;
@@ -100,19 +100,19 @@ function Lights.newLightWorld()
 			// Sum of 1.0 -> in light, 0.0 -> in shadow.
 		 	// Multiply the summed amount by our distance, which gives us a radial falloff.
 		 	return vec4(vec3(1.0), sum * smoothstep(1.0, 0.0, r));
-			//return vec4(vec3(1.0), center*smoothstep(1.0, 0.0, r));
 		}
 	]])
 
-	function LightWorld:addLight(lx,ly,lsize,lr,lg,lb)
+	function LightWorld:addLight(lx,ly,lsize,lr,lg,lb,lscale)
 		local lightInfo = {
 			x=lx,
 			y=ly,
 			size=lsize,
+			scale=lscale,
 			r=lr, g=lg, b=lb,
-			occludersCanvas = love.graphics.newCanvas(lsize, lsize),
-			shadowMapCanvas = love.graphics.newCanvas(lsize, 1),
-			lightRenderCanvas = love.graphics.newCanvas(lsize, lsize),
+			occludersCanvas = love.graphics.newCanvas(lsize*lscale, lsize*lscale),
+			shadowMapCanvas = love.graphics.newCanvas(lsize*lscale, 1),
+			lightRenderCanvas = love.graphics.newCanvas(lsize*lscale, lsize*lscale),
 		}
 
 		table.insert(self.LightInfos, lightInfo)
@@ -146,16 +146,17 @@ function Lights.newLightWorld()
 
 	function LightWorld:updateLight(drawOccludersFn, lightInfo, coordTransX, coordTransY)
 		-- regenerate canvas on resize
-		lightInfo.occludersCanvas = (lightInfo.occludersCanvas:getWidth()==lightInfo.size) and lightInfo.occludersCanvas or love.graphics.newCanvas(lightInfo.size, lightInfo.size)
-		lightInfo.shadowMapCanvas = (lightInfo.shadowMapCanvas:getWidth()==lightInfo.size) and lightInfo.shadowMapCanvas or love.graphics.newCanvas(lightInfo.size, 1)
-		lightInfo.lightRenderCanvas = (lightInfo.lightRenderCanvas:getWidth()==lightInfo.size) and lightInfo.lightRenderCanvas  or love.graphics.newCanvas(lightInfo.size, lightInfo.size)
+		local w = lightInfo.size*lightInfo.scale
+		lightInfo.occludersCanvas = (lightInfo.occludersCanvas:getWidth()==w) and lightInfo.occludersCanvas or love.graphics.newCanvas(w, w)
+		lightInfo.shadowMapCanvas = (lightInfo.shadowMapCanvas:getWidth()==w) and lightInfo.shadowMapCanvas or love.graphics.newCanvas(w, 1)
+		lightInfo.lightRenderCanvas = (lightInfo.lightRenderCanvas:getWidth()==w) and lightInfo.lightRenderCanvas  or love.graphics.newCanvas(w, w)
 
 		lightInfo.occludersCanvas:renderTo(love.graphics.clear)
 		lightInfo.shadowMapCanvas:renderTo(love.graphics.clear)
 		lightInfo.lightRenderCanvas:renderTo(love.graphics.clear)
 
-		self.lightRenderShader:send("xresolution", lightInfo.size);
-		self.shadowMapShader:send("yresolution", lightInfo.size);
+		self.lightRenderShader:send("xresolution", lightInfo.size*lightInfo.scale);
+		self.shadowMapShader:send("yresolution", lightInfo.size*lightInfo.scale);
 
 		-- Upper-left corner of light-casting box.
 		local x = lightInfo.x - (lightInfo.size / 2) + coordTransX
@@ -164,6 +165,7 @@ function Lights.newLightWorld()
 		-- Translating the occluders by the position of the light-casting
 		-- box causes only occluders in the box to appear on the canvas.
 		love.graphics.push()
+		love.graphics.scale(lightInfo.scale, lightInfo.scale)
 		love.graphics.translate(-x, -y)
 
 		lightInfo.occludersCanvas:renderTo(drawOccludersFn)
@@ -188,7 +190,7 @@ function Lights.newLightWorld()
 		-- draw to lightRenderCanvas from shadowMapCanvas
 		love.graphics.setShader(self.lightRenderShader)
 		love.graphics.setCanvas(lightInfo.lightRenderCanvas)
-		love.graphics.draw(lightInfo.shadowMapCanvas, 0, 0, 0, 1, lightInfo.size)
+		love.graphics.draw(lightInfo.shadowMapCanvas, 0, 0, 0, 1, lightInfo.size*lightInfo.scale)
 		love.graphics.setCanvas()
 		love.graphics.setShader()
 
@@ -206,7 +208,7 @@ function Lights.newLightWorld()
 		-- draw the pre-calculated lightRenderCanvas to the screen
 		love.graphics.setBlendMode("add")
 		love.graphics.setColor(lightInfo.r, lightInfo.g, lightInfo.b, 1)
-		love.graphics.draw(lightInfo.lightRenderCanvas, x, y + lightInfo.size, 0, 1, -1)
+		love.graphics.draw(lightInfo.lightRenderCanvas, x, y + lightInfo.size, 0, 1/lightInfo.scale, -1/lightInfo.scale)
 		love.graphics.setBlendMode("alpha")
 
 		love.graphics.pop()
