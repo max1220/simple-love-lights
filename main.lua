@@ -133,7 +133,11 @@ function love.update(dt)
 	if lights[1] then
 		lights[1].x = love.mouse.getX()
 		lights[1].y = love.mouse.getY()
-		lights[1].r,lights[1].g,lights[1].b = hsl_to_rgb(light_hue, 1, 0.5)
+		if love.keyboard.isDown("lshift") then
+			lights[1].r,lights[1].g,lights[1].b = 1,1,1
+		else
+			lights[1].r,lights[1].g,lights[1].b = hsl_to_rgb(light_hue, 1, 0.5)
+		end
 	end
 
 	if obey then
@@ -175,7 +179,7 @@ function love.draw()
 	love.graphics.rectangle("fill", 0,h-menu_h, w, menu_h)
 	love.graphics.setColor(1,1,1,1)
 	love.graphics.print(("FPS: %.1f   dt: %.5f   Lights: %d   GC: %d"):format(love.timer.getFPS(), love.timer.getDelta(), #lights, collectgarbage("count")), 10, 10)
-	love.graphics.print("R: Randomize   LMB: Add light   RMB: Add Occluder   MMB:  Clear", 10, h-menu_h+10)
+	love.graphics.print("R: Randomize   LMB: Add light   RMB: Add Occluder   MMB:  Clear   MW:  Change hue   SHIFT:  White", 10, h-menu_h+10)
 end
 function love.wheelmoved(x,y)
 	light_hue = (light_hue + y*0.01) % 1
